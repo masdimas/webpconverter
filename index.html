@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="id" class="h-full bg-slate-900 text-slate-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebP Converter</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- JSZip Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+    </style>
+</head>
+<body class="min-h-full flex flex-col justify-between bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950 text-slate-100">
+
+    <!-- Header Navbar -->
+    <header class="border-b border-slate-700/60 bg-slate-900/70 backdrop-blur-md sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="p-2.5 bg-indigo-600 rounded-xl shadow-lg shadow-indigo-500/30">
+                    <i class="fa-solid fa-shield-halved text-xl text-white"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">
+                        WebP Converter Pro
+                    </h1>
+                    <p class="text-xs text-slate-400">Pembersih Nama File & Konverter Aman</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2 text-xs bg-emerald-950/60 border border-emerald-700/50 text-emerald-300 px-3 py-1.5 rounded-lg">
+                <i class="fa-solid fa-lock"></i>
+                <span class="font-medium">Client-Side Only & Secure</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-6xl mx-auto px-4 py-8 flex-grow w-full space-y-6">
+
+        <!-- Notification Banner for Alerts/Errors -->
+        <div id="alert-banner" class="hidden p-4 rounded-xl border bg-slate-800/90 backdrop-blur-sm flex items-start justify-between shadow-lg transition-all duration-300">
+            <div class="flex items-start space-x-3">
+                <div id="alert-icon" class="text-lg mt-0.5"></div>
+                <div class="text-sm">
+                    <h4 id="alert-title" class="font-bold"></h4>
+                    <p id="alert-message" class="text-slate-300 mt-0.5"></p>
+                </div>
+            </div>
+            <button onclick="dismissAlert()" class="text-slate-400 hover:text-white p-1">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <!-- Options / Settings Panel -->
+        <div class="bg-slate-800/50 border border-slate-700/60 rounded-2xl p-5 shadow-lg space-y-4">
+            <h2 class="text-sm font-semibold text-slate-200 uppercase tracking-wider flex items-center gap-2">
+                <i class="fa-solid fa-sliders text-indigo-400"></i> Pengaturan Konversi & Sanitasi
+            </h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <!-- Quality Slider -->
+                <div class="bg-slate-900/60 p-3.5 rounded-xl border border-slate-700/40">
+                    <div class="flex justify-between items-center mb-1.5">
+                        <label class="text-xs font-medium text-slate-300">Kualitas WebP</label>
+                        <span id="quality-val" class="text-xs font-bold text-indigo-400">50%</span>
+                    </div>
+                    <input type="range" id="quality-slider" min="1" max="100" value="50" class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-500">
+                </div>
+
+                <!-- Prefix Input -->
+                <div class="bg-slate-900/60 p-3.5 rounded-xl border border-slate-700/40">
+                    <label class="block text-xs font-medium text-slate-300 mb-1.5">Awalan Nama (Prefix)</label>
+                    <input type="text" id="prefix-input" placeholder="Contoh: web_" maxlength="20" class="w-full bg-slate-800 border border-slate-700 text-xs rounded-lg px-3 py-1.5 text-white focus:outline-none focus:border-indigo-500">
+                </div>
+
+                <!-- Suffix Input -->
+                <div class="bg-slate-900/60 p-3.5 rounded-xl border border-slate-700/40">
+                    <label class="block text-xs font-medium text-slate-300 mb-1.5">Akhiran Nama (Suffix)</label>
+                    <input type="text" id="suffix-input" placeholder="Contoh: _opt" maxlength="20" class="w-full bg-slate-800 border border-slate-700 text-xs rounded-lg px-3 py-1.5 text-white focus:outline-none focus:border-indigo-500">
+                </div>
+            </div>
+        </div>
+
+        <!-- Upload Dropzone -->
+        <div id="drop-zone" class="border-2 border-dashed border-indigo-500/40 hover:border-indigo-400 bg-slate-800/30 hover:bg-slate-800/60 transition-all duration-300 rounded-2xl p-8 text-center cursor-pointer relative group shadow-xl">
+            <input type="file" id="file-input" multiple accept="image/jpeg, image/jpg, image/png, image/gif, image/webp" class="hidden">
+            
+            <div class="flex flex-col items-center justify-center space-y-3">
+                <div class="w-16 h-16 bg-indigo-600/20 group-hover:bg-indigo-600/30 text-indigo-400 rounded-full flex items-center justify-center text-2xl transition-transform duration-300 group-hover:scale-110">
+                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                </div>
+                <div>
+                    <p class="text-base font-semibold text-slate-200">
+                        Tarik & Lepas file di sini, atau <span class="text-indigo-400 underline decoration-2 underline-offset-4">Pilih File</span>
+                    </p>
+                    <p class="text-xs text-slate-400 mt-1">
+                        JPG, PNG, GIF, WebP (Max 25MB/file | Maksimal 50 File)
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Controls Section -->
+        <div id="controls-section" class="hidden bg-slate-800/60 border border-slate-700/70 backdrop-blur-md rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-lg">
+            <div class="flex items-center space-x-3 w-full sm:w-auto justify-between sm:justify-start">
+                <div class="text-xs text-slate-300">
+                    Total: <span id="total-count" class="font-bold text-white">0</span> File
+                </div>
+                <div class="h-4 w-[1px] bg-slate-700"></div>
+                <div class="text-xs text-emerald-400 font-medium">
+                    Selesai: <span id="completed-count" class="font-bold">0</span>
+                </div>
+                <div class="h-4 w-[1px] bg-slate-700"></div>
+                <div class="text-xs text-slate-400">
+                    Ukuran Batch: <span id="batch-size" class="font-bold text-slate-200">0 MB</span>
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-2 w-full sm:w-auto justify-end">
+                <button id="btn-clear" class="px-3.5 py-1.5 bg-slate-700/80 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5">
+                    <i class="fa-solid fa-trash-can"></i> Bersihkan
+                </button>
+                <button id="btn-download-all" disabled class="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-800 disabled:text-slate-500 disabled:cursor-not-allowed text-white rounded-lg text-xs font-semibold transition-all shadow-md shadow-indigo-600/20 flex items-center gap-1.5">
+                    <i class="fa-solid fa-file-zipper"></i> Unduh Semua (ZIP)
+                </button>
+            </div>
+        </div>
+
+        <!-- Global Progress Bar -->
+        <div id="progress-container" class="hidden bg-slate-800/40 border border-slate-700/50 rounded-xl p-4">
+            <div class="flex justify-between text-xs text-slate-300 mb-2">
+                <span>Memproses Konversi...</span>
+                <span id="progress-text">0%</span>
+            </div>
+            <div class="w-full bg-slate-700/60 rounded-full h-2 overflow-hidden">
+                <div id="progress-bar" class="bg-gradient-to-r from-indigo-500 to-emerald-400 h-2 rounded-full transition-all duration-300 w-0"></div>
+            </div>
+        </div>
+
+        <!-- Image Processing List -->
+        <div id="file-list" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Dynamic cards inserted here safely -->
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-800 bg-slate-900/60 py-5 mt-8 text-center text-xs text-slate-500">
+        <div class="max-w-6xl mx-auto px-4">
+            <p>WebP Converter Pro Security Edition &copy; 2026. Seluruh proses pengolahan berkas terenkapsulasi secara lokal di browser Anda.</p>
+        </div>
+    </footer>
+
+    <!-- Logic with Hardened Security -->
+    <script>
+        // === SECURITY CONSTANTS & LIMITS ===
+        const MAX_FILE_SIZE_BYTES = 25 * 1024 * 1024; // 25 MB per file limit
+        const MAX_BATCH_SIZE_BYTES = 100 * 1024 * 1024; // 100 MB total batch limit
+        const MAX_FILE_COUNT = 50; // Max 50 files per queue
+        const MAX_IMAGE_DIMENSION = 8192; // Max 8K resolution dimension (8192px)
+
+        // DOM Elements
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const controlsSection = document.getElementById('controls-section');
+        const fileList = document.getElementById('file-list');
+        const totalCountEl = document.getElementById('total-count');
+        const completedCountEl = document.getElementById('completed-count');
+        const batchSizeEl = document.getElementById('batch-size');
+        const btnClear = document.getElementById('btn-clear');
+        const btnDownloadAll = document.getElementById('btn-download-all');
+        const progressContainer = document.getElementById('progress-container');
+        const progressBar = document.getElementById('progress-bar');
+        const progressText = document.getElementById('progress-text');
+        const qualitySlider = document.getElementById('quality-slider');
+        const qualityVal = document.getElementById('quality-val');
+        const prefixInput = document.getElementById('prefix-input');
+        const suffixInput = document.getElementById('suffix-input');
+
+        // Application State
+        let fileItems = [];
+
+        // Quality slider display handler
+        qualitySlider.addEventListener('input', (e) => {
+            qualityVal.innerText = `${e.target.value}%`;
+        });
+
+        // Trigger file picker
+        dropZone.addEventListener('click', () => fileInput.click());
+
+        // Drag & Drop event handlers
+        ['dragenter', 'dragover'].forEach(evt => {
+            dropZone.addEventListener(evt, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                dropZone.classList.add('border-indigo-400', 'bg-slate-800/80');
+            });
+        });
+
+        ['dragleave', 'drop'].forEach(evt => {
+            dropZone.addEventListener(evt, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                dropZone.classList.remove('border-indigo-400', 'bg-slate-800/80');
+            });
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            const files = e.dataTransfer.files;
+            if (files && files.length > 0) handleFiles(files);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files && e.target.files.length > 0) {
+                handleFiles(e.target.files);
+                fileInput.value = ''; // Reset input element
+            }
+        });
+
+        // Main File Handling & Validation Entry Point
+        async function handleFiles(files) {
+            dismissAlert();
+            const incomingFiles = Array.from(files);
+
+            // 1. Check File Count Limit
+            if (fileItems.length + incomingFiles.length > MAX_FILE_COUNT) {
+                showAlert('Batas Jumlah File', `Maksimal hanya ${MAX_FILE_COUNT} file yang diperbolehkan dalam satu antrean.`, 'warning');
+                return;
+            }
+
+            // Calculate current total size
+            let currentTotalSize = fileItems.reduce((acc, curr) => acc + curr.originalSize, 0);
+
+            for (const file of incomingFiles) {
+                // 2. Check Individual File Size Limit
+                if (file.size > MAX_FILE_SIZE_BYTES) {
+                    showAlert('File Terlalu Besar', `File "${sanitizeText(file.name)}" melebihi batas 25MB dan dilewati.`, 'warning');
+                    continue;
+                }
+
+                // 3. Check Total Batch Size Limit
+                if (currentTotalSize + file.size > MAX_BATCH_SIZE_BYTES) {
+                    showAlert('Batas Total Ukuran', `Penambahan file melampaui batas total antrean 100MB.`, 'warning');
+                    break;
+                }
+
+                // 4. Verify Magic Bytes (Deep Binary Inspection)
+                const isValidImage = await verifyMagicBytes(file);
+                if (!isValidImage) {
+                    showAlert('File Tidak Valid / Berbahaya', `File "${sanitizeText(file.name)}" ditolak karena format file asli bukan gambar yang didukung.`, 'error');
+                    continue;
+                }
+
+                currentTotalSize += file.size;
+
+                const id = 'file_' + Math.random().toString(36).substr(2, 9);
+                const cleanedName = generateCleanedFileName(file.name);
+
+                const fileObj = {
+                    id: id,
+                    originalFile: file,
+                    cleanedName: cleanedName,
+                    webpBlob: null,
+                    previewUrl: null,
+                    status: 'pending',
+                    originalSize: file.size,
+                    convertedSize: 0,
+                    errorMessage: ''
+                };
+
+                fileItems.push(fileObj);
+                renderFileCard(fileObj);
+            }
+
+            updateUI();
+            processQueue();
+        }
+
+        // Deep Inspection: Check Magic Bytes (File Signatures)
+        function verifyMagicBytes(file) {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                // Read first 12 bytes of file
+                reader.onloadend = function(e) {
+                    if (!e.target || e.target.readyState !== FileReader.DONE) {
+                        resolve(false);
+                        return;
+                    }
+                    const arr = new Uint8Array(e.target.result);
+                    let header = "";
+                    for (let i = 0; i < arr.length; i++) {
+                        header += arr[i].toString(16).padStart(2, '0');
+                    }
+
+                    // Check Header Magic Bytes
+                    // JPEG: ff d8 ff
+                    // PNG: 89 50 4e 47 0d 0a 1a 0a
+                    // GIF: 47 49 46 38 (GIF87a / GIF89a)
+                    // WEBP: 52 49 46 46 .... 57 45 42 50 (RIFF....WEBP)
+                    const isJpeg = header.startsWith('ffd8ff');
+                    const isPng = header.startsWith('89504e470d0a1a0a');
+                    const isGif = header.startsWith('47494638');
+                    const isWebp = header.startsWith('52494646') && header.substr(16, 8) === '57454250';
+
+                    resolve(isJpeg || isPng || isGif || isWebp);
+                };
+                reader.onerror = () => resolve(false);
+                reader.readAsArrayBuffer(file.slice(0, 12));
+            });
+        }
+
+        // Sanitization & Clean Filename Generation
+        function generateCleanedFileName(originalFilename) {
+            const lastDotIndex = originalFilename.lastIndexOf('.');
+            let nameOnly = lastDotIndex !== -1 ? originalFilename.substring(0, lastDotIndex) : originalFilename;
+
+            // Strict regex: Trim and replace all whitespace sequences with a single underscore
+            nameOnly = nameOnly.trim().replace(/\s+/g, '_');
+
+            // Strip potentially dangerous / invalid filesystem characters (< > : " / \ | ? * and control chars)
+            nameOnly = nameOnly.replace(/[<>:"/\\|?*\x00-\x1F]/g, '');
+
+            // Retrieve Prefix & Suffix values securely
+            const prefix = sanitizeInputString(prefixInput.value);
+            const suffix = sanitizeInputString(suffixInput.value);
+
+            // If empty after stripping, default to 'image'
+            if (!nameOnly) nameOnly = 'image';
+
+            return `${prefix}${nameOnly}${suffix}.webp`;
+        }
+
+        // Helper to sanitize inputs strictly
+        function sanitizeInputString(str) {
+            if (!str) return '';
+            return str.trim().replace(/[<>:"/\\|?*\x00-\x1F\s]/g, '_');
+        }
+
+        // Helper to safely sanitize text for HTML
+        function sanitizeText(str) {
+            const temp = document.createElement('div');
+            temp.textContent = str;
+            return temp.innerHTML;
+        }
+
+        // Render File Card with Safe DOM Injection (XSS Safe)
+        function renderFileCard(fileObj) {
+            const card = document.createElement('div');
+            card.id = fileObj.id;
+            card.className = "bg-slate-800/70 border border-slate-700/60 rounded-xl p-4 flex flex-col justify-between space-y-3 shadow-md relative overflow-hidden transition-all duration-300";
+
+            // Main flex wrapper
+            const topWrapper = document.createElement('div');
+            topWrapper.className = "flex items-start justify-between space-x-3";
+
+            const infoWrapper = document.createElement('div');
+            infoWrapper.className = "flex items-center space-x-3 overflow-hidden";
+
+            // Thumbnail Box
+            const thumbBox = document.createElement('div');
+            thumbBox.id = `thumb-${fileObj.id}`;
+            thumbBox.className = "w-12 h-12 bg-slate-700/80 rounded-lg flex items-center justify-center flex-shrink-0 text-slate-400 overflow-hidden";
+            const iconPlaceholder = document.createElement('i');
+            iconPlaceholder.className = "fa-solid fa-image";
+            thumbBox.appendChild(iconPlaceholder);
+
+            // Names Box
+            const namesBox = document.createElement('div');
+            namesBox.className = "truncate";
+
+            const origNameP = document.createElement('p');
+            origNameP.className = "text-sm font-semibold text-white truncate";
+            origNameP.textContent = fileObj.originalFile.name; // Safe Assignment
+
+            const cleanNameP = document.createElement('p');
+            cleanNameP.className = "text-xs text-indigo-300 font-mono truncate mt-0.5";
+            cleanNameP.textContent = `→ ${fileObj.cleanedName}`; // Safe Assignment
+
+            namesBox.appendChild(origNameP);
+            namesBox.appendChild(cleanNameP);
+
+            infoWrapper.appendChild(thumbBox);
+            infoWrapper.appendChild(namesBox);
+
+            // Delete Button
+            const deleteBtn = document.createElement('button');
+            deleteBtn.className = "text-slate-500 hover:text-rose-400 transition-colors p-1";
+            deleteBtn.innerHTML = '<i class="fa-solid fa-xmark text-base"></i>';
+            deleteBtn.onclick = () => removeFile(fileObj.id);
+
+            topWrapper.appendChild(infoWrapper);
+            topWrapper.appendChild(deleteBtn);
+
+            // Bottom Status / Size Bar
+            const bottomBar = document.createElement('div');
+            bottomBar.className = "flex items-center justify-between text-xs text-slate-400 border-t border-slate-700/40 pt-2.5";
+
+            const sizeContainer = document.createElement('div');
+            sizeContainer.className = "flex items-center space-x-1.5";
+
+            const origSizeSpan = document.createElement('span');
+            origSizeSpan.textContent = formatBytes(fileObj.originalSize);
+
+            const arrowSpan = document.createElement('span');
+            arrowSpan.id = `size-arrow-${fileObj.id}`;
+            arrowSpan.className = "hidden text-slate-500";
+            arrowSpan.textContent = "→";
+
+            const convSizeSpan = document.createElement('span');
+            convSizeSpan.id = `converted-size-${fileObj.id}`;
+            convSizeSpan.className = "text-emerald-400 font-medium";
+
+            sizeContainer.appendChild(origSizeSpan);
+            sizeContainer.appendChild(arrowSpan);
+            sizeContainer.appendChild(convSizeSpan);
+
+            const badgeContainer = document.createElement('div');
+            badgeContainer.id = `status-badge-${fileObj.id}`;
+            badgeContainer.innerHTML = `
+                <span class="bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2 py-0.5 rounded text-[10px] font-medium flex items-center gap-1">
+                    <i class="fa-solid fa-clock"></i> Menunggu
+                </span>`;
+
+            bottomBar.appendChild(sizeContainer);
+            bottomBar.appendChild(badgeContainer);
+
+            card.appendChild(topWrapper);
+            card.appendChild(bottomBar);
+            fileList.appendChild(card);
+
+            // Safely generate image thumbnail preview
+            createThumbnail(fileObj);
+        }
+
+        // Safely create thumbnail preview and manage Object URL memory
+        function createThumbnail(fileObj) {
+            const objectUrl = URL.createObjectURL(fileObj.originalFile);
+            const img = new Image();
+            img.onload = () => {
+                const thumbBox = document.getElementById(`thumb-${fileObj.id}`);
+                if (thumbBox) {
+                    thumbBox.innerHTML = '';
+                    img.className = 'w-full h-full object-cover rounded-lg';
+                    thumbBox.appendChild(img);
+                }
+                URL.revokeObjectURL(objectUrl); // Revoke Object URL immediately after load
+            };
+            img.onerror = () => {
+                URL.revokeObjectURL(objectUrl);
+            };
+            img.src = objectUrl;
+        }
+
+        // Queue Processing
+        async function processQueue() {
+            const pendingItems = fileItems.filter(item => item.status === 'pending');
+            if (pendingItems.length === 0) return;
+
+            progressContainer.classList.remove('hidden');
+
+            for (const item of pendingItems) {
+                if (item.status === 'pending') {
+                    await convertToWebP(item);
+                    updateProgress();
+                }
+            }
+        }
+
+        // Convert Image using Canvas with Security Checks
+        function convertToWebP(item) {
+            return new Promise((resolve) => {
+                item.status = 'processing';
+                updateStatusBadge(item, 'processing');
+
+                const objectUrl = URL.createObjectURL(item.originalFile);
+                const img = new Image();
+
+                img.onload = () => {
+                    URL.revokeObjectURL(objectUrl); // Clean up memory immediately
+
+                    // Check maximum dimension resolution to prevent Decompression Bomb DoS
+                    if (img.width > MAX_IMAGE_DIMENSION || img.height > MAX_IMAGE_DIMENSION) {
+                        item.status = 'error';
+                        item.errorMessage = `Dimensi gambar terlalu besar (Maksimal ${MAX_IMAGE_DIMENSION}px)`;
+                        updateStatusBadge(item, 'error');
+                        resolve();
+                        return;
+                    }
+
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0);
+
+                    // Read quality slider value
+                    const quality = parseInt(qualitySlider.value, 10) / 100;
+
+                    canvas.toBlob((blob) => {
+                        if (blob) {
+                            item.webpBlob = blob;
+                            item.convertedSize = blob.size;
+                            item.status = 'done';
+                            updateStatusBadge(item, 'done');
+                        } else {
+                            item.status = 'error';
+                            item.errorMessage = 'Browser gagal membuat Blob WebP';
+                            updateStatusBadge(item, 'error');
+                        }
+                        // Clean up canvas
+                        canvas.width = 0;
+                        canvas.height = 0;
+                        resolve();
+                    }, 'image/webp', quality);
+                };
+
+                img.onerror = () => {
+                    URL.revokeObjectURL(objectUrl);
+                    item.status = 'error';
+                    item.errorMessage = 'Format file tidak dapat diproses';
+                    updateStatusBadge(item, 'error');
+                    resolve();
+                };
+
+                img.src = objectUrl;
+            });
+        }
+
+        // Update UI Status Badges
+        function updateStatusBadge(item, status) {
+            const badgeEl = document.getElementById(`status-badge-${item.id}`);
+            const convSizeEl = document.getElementById(`converted-size-${item.id}`);
+            const arrowEl = document.getElementById(`size-arrow-${item.id}`);
+
+            if (!badgeEl) return;
+
+            if (status === 'processing') {
+                badgeEl.innerHTML = `
+                    <span class="bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-2 py-0.5 rounded text-[10px] font-medium flex items-center gap-1">
+                        <i class="fa-solid fa-circle-notch animate-spin"></i> Proses...
+                    </span>`;
+            } else if (status === 'done') {
+                badgeEl.innerHTML = '';
+                const dlBtn = document.createElement('button');
+                dlBtn.className = "bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2.5 py-1 rounded-md text-xs font-semibold flex items-center gap-1.5 transition-colors";
+                dlBtn.innerHTML = '<i class="fa-solid fa-download"></i> Unduh';
+                dlBtn.onclick = () => downloadSingle(item.id);
+                badgeEl.appendChild(dlBtn);
+
+                if (arrowEl) arrowEl.classList.remove('hidden');
+                if (convSizeEl) convSizeEl.innerText = formatBytes(item.convertedSize);
+            } else if (status === 'error') {
+                badgeEl.innerHTML = `
+                    <span class="bg-rose-500/10 text-rose-400 border border-rose-500/20 px-2 py-0.5 rounded text-[10px] font-medium flex items-center gap-1" title="${sanitizeText(item.errorMessage)}">
+                        <i class="fa-solid fa-circle-exclamation"></i> Gagal
+                    </span>`;
+            }
+
+            updateUI();
+        }
+
+        // Single File Download Handler with Object URL Memory Management
+        window.downloadSingle = function(id) {
+            const item = fileItems.find(i => i.id === id);
+            if (!item || !item.webpBlob) return;
+
+            const url = URL.createObjectURL(item.webpBlob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = item.cleanedName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+
+            setTimeout(() => URL.revokeObjectURL(url), 100);
+        };
+
+        // Batch ZIP Download with Memory Cleanup
+        btnDownloadAll.addEventListener('click', async () => {
+            const completedItems = fileItems.filter(item => item.status === 'done' && item.webpBlob);
+            if (completedItems.length === 0) return;
+
+            btnDownloadAll.disabled = true;
+            btnDownloadAll.innerHTML = `<i class="fa-solid fa-circle-notch animate-spin"></i> Kompresi ZIP...`;
+
+            try {
+                const zip = new JSZip();
+
+                completedItems.forEach(item => {
+                    zip.file(item.cleanedName, item.webpBlob);
+                });
+
+                const content = await zip.generateAsync({ type: 'blob' });
+                const zipUrl = URL.createObjectURL(content);
+
+                const a = document.createElement('a');
+                a.href = zipUrl;
+                a.download = 'hasil_convert_webp.zip';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+
+                setTimeout(() => URL.revokeObjectURL(zipUrl), 1000);
+
+            } catch (err) {
+                showAlert('Gagal Kompresi', 'Terjadi kesalahan saat memproses file ZIP.', 'error');
+            } finally {
+                btnDownloadAll.disabled = false;
+                btnDownloadAll.innerHTML = `<i class="fa-solid fa-file-zipper"></i> Unduh Semua (ZIP)`;
+            }
+        });
+
+        // Remove Single File Item
+        window.removeFile = function(id) {
+            fileItems = fileItems.filter(item => item.id !== id);
+            const card = document.getElementById(id);
+            if (card) card.remove();
+            updateUI();
+            updateProgress();
+        };
+
+        // Clear All Queue
+        btnClear.addEventListener('click', () => {
+            fileItems = [];
+            fileList.innerHTML = '';
+            progressContainer.classList.add('hidden');
+            dismissAlert();
+            updateUI();
+        });
+
+        // Dynamic UI & Counters Update
+        function updateUI() {
+            const total = fileItems.length;
+            const completed = fileItems.filter(i => i.status === 'done').length;
+            const totalBytes = fileItems.reduce((acc, curr) => acc + curr.originalSize, 0);
+
+            totalCountEl.innerText = total;
+            completedCountEl.innerText = completed;
+            batchSizeEl.innerText = formatBytes(totalBytes);
+
+            if (total > 0) {
+                controlsSection.classList.remove('hidden');
+            } else {
+                controlsSection.classList.add('hidden');
+                progressContainer.classList.add('hidden');
+            }
+
+            btnDownloadAll.disabled = completed === 0;
+        }
+
+        // Progress Bar Calculation
+        function updateProgress() {
+            const total = fileItems.length;
+            if (total === 0) return;
+
+            const processed = fileItems.filter(i => i.status === 'done' || i.status === 'error').length;
+            const percentage = Math.round((processed / total) * 100);
+
+            progressBar.style.width = `${percentage}%`;
+            progressText.innerText = `${percentage}% (${processed}/${total})`;
+        }
+
+        // Alert Banner Component Handler
+        function showAlert(title, message, type = 'info') {
+            const banner = document.getElementById('alert-banner');
+            const titleEl = document.getElementById('alert-title');
+            const msgEl = document.getElementById('alert-message');
+            const iconEl = document.getElementById('alert-icon');
+
+            titleEl.textContent = title;
+            msgEl.textContent = message;
+
+            if (type === 'error') {
+                banner.className = 'p-4 rounded-xl border border-rose-500/40 bg-rose-950/80 text-rose-200 flex items-start justify-between shadow-lg';
+                iconEl.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-rose-400"></i>';
+            } else if (type === 'warning') {
+                banner.className = 'p-4 rounded-xl border border-amber-500/40 bg-amber-950/80 text-amber-200 flex items-start justify-between shadow-lg';
+                iconEl.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-amber-400"></i>';
+            } else {
+                banner.className = 'p-4 rounded-xl border border-indigo-500/40 bg-indigo-950/80 text-indigo-200 flex items-start justify-between shadow-lg';
+                iconEl.innerHTML = '<i class="fa-solid fa-circle-info text-indigo-400"></i>';
+            }
+
+            banner.classList.remove('hidden');
+        }
+
+        function dismissAlert() {
+            document.getElementById('alert-banner').classList.add('hidden');
+        }
+
+        // Utility: Format File Size
+        function formatBytes(bytes, decimals = 1) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const dm = decimals < 0 ? 0 : decimals;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+        }
+    </script>
+</body>
+</html>
